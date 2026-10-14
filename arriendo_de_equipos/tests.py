@@ -1,8 +1,10 @@
 from datetime import date
 from decimal import Decimal
 
+from django.contrib import admin
 from django.test import TestCase
 
+from .admin import ArriendoAdmin, EquipoAdmin, formato_pesos
 from .models import Arriendo, Equipo
 
 
@@ -35,3 +37,25 @@ class EquipoArriendoTests(TestCase):
         self.equipo.delete()
 
         self.assertFalse(Arriendo.objects.filter(pk=arriendo_id).exists())
+
+    def test_panel_muestra_montos_en_pesos_chilenos(self):
+        self.assertEqual(formato_pesos(Decimal('12990')), '$12.990')
+        self.assertEqual(
+            EquipoAdmin(Equipo, admin.site).valor_diario_pesos(self.equipo),
+            '$12.000',
+        )
+        self.assertEqual(
+            ArriendoAdmin(Arriendo, admin.site).monto_total_pesos(self.arriendo),
+            '$24.000',
+        )
+
+    def test_listados_tienen_columnas_filtros_y_busqueda(self):
+        equipo_admin = EquipoAdmin(Equipo, admin.site)
+        arriendo_admin = ArriendoAdmin(Arriendo, admin.site)
+
+        self.assertGreater(len(equipo_admin.get_list_display(request=None)), 1)
+        self.assertTrue(equipo_admin.get_list_filter(request=None))
+        self.assertTrue(equipo_admin.get_search_fields(request=None))
+        self.assertGreater(len(arriendo_admin.get_list_display(request=None)), 1)
+        self.assertTrue(arriendo_admin.get_list_filter(request=None))
+        self.assertTrue(arriendo_admin.get_search_fields(request=None))
